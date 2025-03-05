@@ -39,11 +39,12 @@ An interactive 3D viewer application implementing basic computer graphics concep
 
 
 ##
-   Run the application:
 
-
+   **Run the application**:
+```bash
 python main.py
-Controls
+
+  ##Controls
 Key	Action
 Arrow Keys	X/Y Translation
 Page Up/Down	Z Translation
