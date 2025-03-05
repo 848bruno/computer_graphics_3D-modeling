@@ -4,7 +4,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-# Cube vertex coordinates and surfaces
+# Vertex and surface definitions (MUST COME FIRST)
 vertices = (
     (1, -1, -1),
     (1, 1, -1),
@@ -17,36 +17,21 @@ vertices = (
 )
 
 edges = (
-    (0, 1),
-    (0, 3),
-    (0, 4),
-    (2, 1),
-    (2, 3),
-    (2, 7),
-    (6, 3),
-    (6, 4),
-    (6, 7),
-    (5, 1),
-    (5, 4),
-    (5, 7)
+    (0, 1), (0, 3), (0, 4),
+    (2, 1), (2, 3), (2, 7),
+    (6, 3), (6, 4), (6, 7),
+    (5, 1), (5, 4), (5, 7)
 )
 
 surfaces = (
-    (0, 1, 2, 3),
-    (3, 2, 7, 6),
-    (6, 7, 5, 4),
-    (4, 5, 1, 0),
-    (1, 5, 7, 2),
-    (4, 0, 3, 6)
+    (0, 1, 2, 3), (3, 2, 7, 6),
+    (6, 7, 5, 4), (4, 5, 1, 0),
+    (1, 5, 7, 2), (4, 0, 3, 6)
 )
 
 colors = (
-    (1, 0, 0),  # Red
-    (0, 1, 0),  # Green
-    (0, 0, 1),  # Blue
-    (1, 1, 0),  # Yellow
-    (1, 0, 1),  # Magenta
-    (0, 1, 1)   # Cyan
+    (1, 0, 0), (0, 1, 0), (0, 0, 1),
+    (1, 1, 0), (1, 0, 1), (0, 1, 1)
 )
 
 texture_coords = (
@@ -58,16 +43,16 @@ texture_coords = (
 translate = [0, 0, -5]
 rotate = [0, 0, 0]
 scale = 1.0
-texture_mode = False
+texture_mode = True  # Default to texture mode
 mouse_dragging = False
 last_mouse_pos = (0, 0)
 
 def create_checkerboard_texture():
-    """Generate a 64x64 checkerboard pattern"""
+    """Generate high-contrast fallback texture"""
     texture_size = 64
     checkerboard = pygame.Surface((texture_size, texture_size))
-    dark = (50, 50, 150, 255)
-    light = (200, 200, 250, 255)
+    dark = (100, 100, 200, 255)
+    light = (255, 255, 255, 255)
     
     for y in range(texture_size):
         for x in range(texture_size):
@@ -76,19 +61,19 @@ def create_checkerboard_texture():
     return checkerboard
 
 def load_texture(image_path):
-    """Load texture with enhanced handling"""
+    """Robust texture loading with error handling"""
     try:
-        try:
-            texture_surface = pygame.image.load(image_path)
-        except pygame.error:
-            texture_surface = create_checkerboard_texture()
-        
+        texture_surface = pygame.image.load(image_path)
+    except Exception as e:
+        print(f"Texture load failed: {e}, using fallback")
+        texture_surface = create_checkerboard_texture()
+    
+    try:
         texture_data = pygame.image.tostring(texture_surface, "RGBA", 1)
-        
         texture_id = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, texture_id)
         
-        # Improved texture parameters
+        # Mipmapping parameters
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
@@ -100,16 +85,24 @@ def load_texture(image_path):
                         GL_RGBA, GL_UNSIGNED_BYTE, texture_data)
         return texture_id
     except Exception as e:
-        print(f"Texture error: {e}")
+        print(f"Texture processing failed: {e}")
         return None
 
 def draw_cube(texture_id):
-    """Render cube with improved texture handling"""
+    """Drawing function with proper variable access"""
+    glEnable(GL_DEPTH_TEST)
+    
     if texture_id and texture_mode:
+        # Texture rendering with material properties
         glDisable(GL_COLOR_MATERIAL)
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, texture_id)
-        glColor3f(1, 1, 1)  # Reset color for proper texture
+        
+        # Force white ambient/diffuse
+        glMaterialfv(GL_FRONT, GL_AMBIENT, (1.0, 1.0, 1.0, 1.0))
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
+        glColor3f(1, 1, 1)
+        
         glBegin(GL_QUADS)
         for surface in surfaces:
             for i, vertex in enumerate(surface):
@@ -118,8 +111,10 @@ def draw_cube(texture_id):
         glEnd()
         glDisable(GL_TEXTURE_2D)
     else:
+        # Color mode with materials
         glEnable(GL_COLOR_MATERIAL)
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+        
         glBegin(GL_QUADS)
         for i, surface in enumerate(surfaces):
             glColor3fv(colors[i])
@@ -127,8 +122,8 @@ def draw_cube(texture_id):
                 glVertex3fv(vertices[vertex])
         glEnd()
 
-    # Draw wireframe edges
-    glColor3f(0, 0, 0)
+    # Wireframe with contrast
+    glColor3f(0.2, 0.2, 0.2)
     glBegin(GL_LINES)
     for edge in edges:
         for vertex in edge:
@@ -136,10 +131,10 @@ def draw_cube(texture_id):
     glEnd()
 
 def set_projection():
-    """Configure perspective projection"""
+    """Updated projection parameters"""
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(45, (800/600), 0.1, 50.0)
+    gluPerspective(45, (800/600), 0.1, 100.0)  # Increased far plane
     glMatrixMode(GL_MODELVIEW)
 
 def main():
@@ -148,7 +143,7 @@ def main():
     pygame.init()
     display = (800, 600)
     pygame.display.set_mode(display, DOUBLEBUF|OPENGL)
-    pygame.display.set_caption("3D Interactive Object Viewer")
+    pygame.display.set_caption("3D Viewer Enhanced")
 
     texture_id = load_texture("assets/texture.jpg")
 
@@ -156,14 +151,19 @@ def main():
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
     glEnable(GL_LIGHT0)
-    glLightfv(GL_LIGHT0, GL_POSITION, (2, 2, 2, 1))  # Better position
-    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.3, 0.3, 0.3, 1))  # Increased ambient
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1))  # Stronger diffuse
-    glMaterialfv(GL_FRONT, GL_SPECULAR, (0.5, 0.5, 0.5, 1))  # Adjusted specular
-    glMaterialf(GL_FRONT, GL_SHININESS, 50)
+    glLightfv(GL_LIGHT0, GL_POSITION, (5, 5, 5, 1))
+    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.7, 0.7, 0.7, 1.0))
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
+    glLightfv(GL_LIGHT0, GL_SPECULAR, (0.9, 0.9, 0.9, 1.0))
+    
+    # Base material properties
+    glMaterialfv(GL_FRONT, GL_AMBIENT, (0.7, 0.7, 0.7, 1.0))
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, (0.9, 0.9, 0.9, 1.0))
+    glMaterialfv(GL_FRONT, GL_SPECULAR, (0.5, 0.5, 0.5, 1.0))
+    glMaterialf(GL_FRONT, GL_SHININESS, 76.8)
 
     set_projection()
-    gluLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0)
+    gluLookAt(0, 0, 7, 0, 0, 0, 0, 1, 0)  # Adjusted camera
 
     clock = pygame.time.Clock()
 
@@ -173,66 +173,53 @@ def main():
                 pygame.quit()
                 quit()
 
-            # Mouse controls
+            # Mouse handling
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Left click
+                if event.button == 1:
                     mouse_dragging = True
                     last_mouse_pos = event.pos
-                elif event.button == 4:  # Mouse wheel up
+                elif event.button == 4:
                     translate[2] += 0.5
-                elif event.button == 5:  # Mouse wheel down
+                elif event.button == 5:
                     translate[2] -= 0.5
 
-            if event.type == pygame.MOUSEBUTTONUP:
-                if event.button == 1:
-                    mouse_dragging = False
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                mouse_dragging = False
 
             if event.type == pygame.MOUSEMOTION and mouse_dragging:
-                x, y = event.pos
-                dx = x - last_mouse_pos[0]
-                dy = y - last_mouse_pos[1]
+                dx, dy = event.pos[0] - last_mouse_pos[0], event.pos[1] - last_mouse_pos[1]
                 rotate[0] += dy * 0.5
                 rotate[1] += dx * 0.5
-                last_mouse_pos = (x, y)
+                last_mouse_pos = event.pos
 
             # Keyboard controls
             if event.type == pygame.KEYDOWN:
-                # Translation
                 if event.key == pygame.K_LEFT: translate[0] -= 0.1
-                if event.key == pygame.K_RIGHT: translate[0] += 0.1
-                if event.key == pygame.K_UP: translate[1] += 0.1
-                if event.key == pygame.K_DOWN: translate[1] -= 0.1
-                if event.key == pygame.K_PAGEUP: translate[2] += 0.1
-                if event.key == pygame.K_PAGEDOWN: translate[2] -= 0.1
-
-                # Rotation
-                if event.key == pygame.K_x: rotate[0] += 5
-                if event.key == pygame.K_y: rotate[1] += 5
-                if event.key == pygame.K_z: rotate[2] += 5
-                
-                # Scaling
-                if event.key == pygame.K_PLUS: scale += 0.1
-                if event.key == pygame.K_MINUS: scale -= 0.1
-                
-                # Toggle texture/color mode
-                if event.key == pygame.K_t: 
-                    texture_mode = not texture_mode
-                
-                # Reset
-                if event.key == pygame.K_r:
+                elif event.key == pygame.K_RIGHT: translate[0] += 0.1
+                elif event.key == pygame.K_UP: translate[1] += 0.1
+                elif event.key == pygame.K_DOWN: translate[1] -= 0.1
+                elif event.key == pygame.K_PAGEUP: translate[2] += 0.1
+                elif event.key == pygame.K_PAGEDOWN: translate[2] -= 0.1
+                elif event.key == pygame.K_x: rotate[0] += 5
+                elif event.key == pygame.K_y: rotate[1] += 5
+                elif event.key == pygame.K_z: rotate[2] += 5
+                elif event.key == pygame.K_PLUS: scale += 0.1
+                elif event.key == pygame.K_MINUS: scale -= 0.1
+                elif event.key == pygame.K_t: texture_mode = not texture_mode
+                elif event.key == pygame.K_r:
                     translate = [0, 0, -5]
                     rotate = [0, 0, 0]
                     scale = 1.0
-                    texture_mode = False
 
-        # Rendering
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        # Transformation order maintained
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         glTranslatef(*translate)
         glRotatef(rotate[0], 1, 0, 0)
         glRotatef(rotate[1], 0, 1, 0)
         glRotatef(rotate[2], 0, 0, 1)
         glScalef(scale, scale, scale)
+
         draw_cube(texture_id)
         pygame.display.flip()
         clock.tick(60)
