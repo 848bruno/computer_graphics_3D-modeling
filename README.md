@@ -31,73 +31,68 @@ An interactive 3D viewer application implementing basic computer graphics concep
 2. **Install dependencies**:
    ```bash
    pip install pygame PyOpenGL PyOpenGL_accelerate
+3. **Run the application**:
+   ```bash
+   python main.py
 
+## Controls
 
+  **Key	Action**
+   Arrow Keys	X/Y Translation
+   Page Up/Down	Z Translation
+   X/Y/Z	Rotate about respective axis
+   +/-	Scale object
+   R	Reset transformations
+   T	Toggle texture/color mode
 
+## Customization
 
+  **Textures**:
 
+    Place any image file named texture.png in the project directory
 
+    Supported formats: PNG, JPG, BMP
 
-##
+    Recommended size: 512x512 pixels
 
-   **Run the application**:
-```bash
-python main.py
+  **Visual Settings**:
 
-  ##Controls
-Key	Action
-Arrow Keys	X/Y Translation
-Page Up/Down	Z Translation
-X/Y/Z	Rotate about respective axis
-+/-	Scale object
-R	Reset transformations
-T	Toggle texture/color mode
-Customization
-Textures:
+    Modify vertices array in code to change cube dimensions
 
-Place any image file named texture.png in the project directory
+    Adjust colors in colors tuple
 
-Supported formats: PNG, JPG, BMP
+    Change lighting parameters in main()
 
-Recommended size: 512x512 pixels
+## Implementation Details
 
-Visual Settings:
+  **Core Components**:
 
-Modify vertices array in code to change cube dimensions
+    OpenGL transformation matrices
 
-Adjust colors in colors tuple
+    GLUT-style perspective projection
 
-Change lighting parameters in main()
+    Phong-style lighting model
 
-Implementation Details
-Core Components:
+    Texture mapping with UV coordinates
 
-OpenGL transformation matrices
+    Double buffered rendering
 
-GLUT-style perspective projection
+  **Key Functions**:
+    ```bash
+    draw_cube(): Handles vertex rendering with material/texture
 
-Phong-style lighting model
+    load_texture(): Manages texture loading/fallback
 
-Texture mapping with UV coordinates
+    create_checkerboard_texture(): Generates default pattern
 
-Double buffered rendering
+    set_projection(): Configures viewing frustum
 
-Key Functions:
+## Dependencies
+    Pygame: Window management and input
 
-draw_cube(): Handles vertex rendering with material/texture
+    PyOpenGL: OpenGL bindings
 
-load_texture(): Manages texture loading/fallback
+    PyOpenGL Accelerate: Performance optimizations
 
-create_checkerboard_texture(): Generates default pattern
-
-set_projection(): Configures viewing frustum
-
-Dependencies
-Pygame: Window management and input
-
-PyOpenGL: OpenGL bindings
-
-PyOpenGL Accelerate: Performance optimizations
-
-License
-Open-source under MIT License. Feel free to modify and distribute.
+## License
+   Open-source under MIT License. Feel free to modify and distribute.
